@@ -44,6 +44,7 @@ and easy extension (e.g., switch storage, queue, or fetcher adapters).
 ### Prerequisites
 - Docker + Docker Compose v2
 - Python ≥ 3.11 (optional if you only run in Docker)
+- Tools (optional) curl, git, pytest, ruff, mypy
 
 ### Build & Start All Services
 ```bash
@@ -231,6 +232,7 @@ curl http://127.0.0.1:8000/scan/<SCAN_ID>
 # 4. Run integration test
 docker compose -f docker/docker-compose.yml run --rm tests pytest -v tests/test_scan_rabbitmq.py
 ```
+
 
 
 
