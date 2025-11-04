@@ -1,6 +1,8 @@
 # /app/ports/result_store.py
 from __future__ import annotations
+
 from typing import Protocol
+
 
 class ResultStorePort(Protocol):
     def set_pending(self, scan_id: str) -> None: ...

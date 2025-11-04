@@ -1,14 +1,15 @@
 # /app/adapters/http/aiohttp_fetcher.py
 from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Tuple
 
 import aiohttp
 
 from app.config import settings
 
 LOG = logging.getLogger("adapter.http_fetcher")
+
 
 class AiohttpFetcher:
     """
@@ -29,7 +30,7 @@ class AiohttpFetcher:
 
     async def _ensure_session(self) -> aiohttp.ClientSession:
         loop = asyncio.get_running_loop()
-        loop_changed = (self._loop is not None and self._loop is not loop)
+        loop_changed = self._loop is not None and self._loop is not loop
 
         if loop_changed:
             # old session belonged to a different (likely closed) loop -> close & reset
@@ -56,7 +57,7 @@ class AiohttpFetcher:
 
         return self._session
 
-    async def fetch(self, scheme: str, host: str, port: int, path: str) -> Tuple[int, bytes, str]:
+    async def fetch(self, scheme: str, host: str, port: int, path: str) -> tuple[int, bytes, str]:
         """
         Returns (status, body, final_url). Enforces global/per-host limits, timeout,
         max bytes, and retries with exponential backoff.
@@ -68,19 +69,24 @@ class AiohttpFetcher:
             attempt = 0
             while True:
                 try:
-                    LOG.info("fetching", extra={"extra": {"url": url, "verify_tls": settings.VERIFY_TLS}})
+                    LOG.info(
+                        "fetching", extra={"extra": {"url": url, "verify_tls": settings.VERIFY_TLS}}
+                    )
                     async with sess.get(url, ssl=settings.VERIFY_TLS, allow_redirects=True) as resp:
                         body = bytearray()
                         async for chunk in resp.content.iter_chunked(64 * 1024):
                             body.extend(chunk)
                             if len(body) > self._max_bytes:
-                                LOG.warning("body_truncated", extra={"extra": {"url": url, "max": self._max_bytes}})
+                                LOG.warning(
+                                    "body_truncated",
+                                    extra={"extra": {"url": url, "max": self._max_bytes}},
+                                )
                                 break
                         return resp.status, bytes(body[: self._max_bytes]), str(resp.url)
-                except (aiohttp.ClientError, asyncio.TimeoutError):
+                except (TimeoutError, aiohttp.ClientError):
                     if attempt >= self._retries:
                         raise
-                    await asyncio.sleep((self._backoff_ms / 1000.0) * (2 ** attempt))
+                    await asyncio.sleep((self._backoff_ms / 1000.0) * (2**attempt))
                     attempt += 1
 
     async def close(self) -> None:

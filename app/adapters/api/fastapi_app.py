@@ -1,16 +1,16 @@
 # /app/adapters/api/fastapi_app.py
 from __future__ import annotations
+
 import logging
 import uuid
-from typing import Optional
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
-from app.config import settings
+from app.adapters.system.celery_app import celery_app
 from app.adapters.system.logging_cfg import configure_logger
 from app.adapters.system.redis_result_store import RedisResultStore
-from app.adapters.system.celery_app import celery_app
+from app.config import settings
 
 LOG = logging.getLogger("adapter.api")
 app = FastAPI(title="favicon-scanner")
@@ -18,16 +18,21 @@ configure_logger()
 
 _store = RedisResultStore(settings.REDIS_URL)
 
+
 class ScanRequestModel(BaseModel):
     targets: list[str]
-    ports: Optional[list[int]] = None
+    ports: list[int] | None = None
+
 
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
 
+
 @app.post("/scan")
-async def scan_start(payload: ScanRequestModel, x_api_key: str | None = Header(default=None)) -> dict:
+async def scan_start(
+    payload: ScanRequestModel, x_api_key: str | None = Header(default=None)
+) -> dict:
     if settings.API_KEY and x_api_key != settings.API_KEY:
         raise HTTPException(status_code=401, detail="invalid api key")
     if not payload.targets:
@@ -47,6 +52,7 @@ async def scan_start(payload: ScanRequestModel, x_api_key: str | None = Header(d
     LOG.info("scan.enqueued", extra={"extra": {"scan_id": scan_id, "job_id": job.id}})
     return {"scan_id": scan_id, "status": "pending", "job_id": job.id}
 
+
 @app.get("/scan/{scan_id}")
 async def scan_result(scan_id: str, x_api_key: str | None = Header(default=None)) -> dict:
     if settings.API_KEY and x_api_key != settings.API_KEY:
@@ -55,18 +61,3 @@ async def scan_result(scan_id: str, x_api_key: str | None = Header(default=None)
     if entry is None:
         raise HTTPException(status_code=404, detail="scan_id not found")
     return entry
-
-
-
-
-
-# /app/adapters/api/fastapi_app.py (add at bottom)
-from app.adapters.repositories.rapid7_recog_repo import Rapid7RecogRepository
-
-_repo_for_debug = Rapid7RecogRepository(settings.FAVICONS_PATH)
-
-@app.get("/match/{md5}")
-def debug_match(md5: str, x_api_key: str | None = Header(default=None)) -> dict:
-    if settings.API_KEY and x_api_key != settings.API_KEY:
-        raise HTTPException(status_code=401, detail="invalid api key")
-    return {"md5": md5.lower(), "matches": _repo_for_debug.lookup_md5(md5)}

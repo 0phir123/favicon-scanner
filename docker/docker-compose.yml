@@ -1,53 +1,85 @@
-# /docker/docker-compose.yml
-version: "3.8"
 services:
   redis:
     image: redis:7-alpine
-    container_name: redis
     ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD","redis-cli","PING"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
 
-  scanner:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    # OPTIONAL: publish to host so you can open it in a browser. Pick non-conflicting ports.
+    # Comment these two lines if you don't need host access.
+    ports:
+      - "5673:5672"     # AMQP on host 5673 -> container 5672
+      - "15673:15672"   # UI  on host 15673 -> container 15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      # Use rabbitmq-diagnostics ping (more reliable than curl early in boot)
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+
+  api:
+    build:
+      context: ..                # <<< IMPORTANT
+      dockerfile: docker/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      FAVICONS_PATH: /data/favicons.xml
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD-SHELL","curl -fsS http://localhost:8000/docs >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 50
+
+  worker:
+    build:
+      context: ..                
+      dockerfile: docker/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      FAVICONS_PATH: /data/favicons.xml
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.adapters.system.celery_app.celery_app
+      worker --loglevel=INFO -c 4
+
+  tests:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: favicon-scanner:latest
-    container_name: favicon-scanner
-    environment:
-      API_KEY: ${API_KEY:-}
-      VERIFY_TLS: "false"
-      CONCURRENCY: "200"
-      TIMEOUT_SECONDS: "3.0"
-      PER_HOST_LIMIT: "5"
-      MAX_TARGETS: "2048"
-      MAX_SOCKETS_PER_JOB: "10000"
-      MAX_BYTES: "2097152"
-      RETRIES: "1"
-      RETRY_BACKOFF_MS: "250"
-      FAVICONS_PATH: "/app/data/favicons.xml"
-      REDIS_URL: "redis://redis:6379/0"
-    depends_on: [redis]
+    working_dir: /app
     volumes:
-      - ../data:/app/data:ro
-    ports: ["8000:8000"]
-
-  worker:
-    image: favicon-scanner:latest
-    container_name: favicon-worker
-    command: >-
-      sh -c "celery -A app.adapters.system.celery_app.celery_app worker --loglevel=INFO -Q celery -c ${CELERY_WORKER_CONCURRENCY:-4}"
+      - ..:/app              
     environment:
-      VERIFY_TLS: "false"
-      CONCURRENCY: "200"
-      TIMEOUT_SECONDS: "3.0"
-      PER_HOST_LIMIT: "5"
-      MAX_TARGETS: "2048"
-      MAX_SOCKETS_PER_JOB: "10000"
-      MAX_BYTES: "2097152"
-      RETRIES: "1"
-      RETRY_BACKOFF_MS: "250"
-      FAVICONS_PATH: "/app/data/favicons.xml"
-      REDIS_URL: "redis://redis:6379/0"
-      CELERY_WORKER_CONCURRENCY: "${CELERY_WORKER_CONCURRENCY:-4}"
-    depends_on: [redis]
-    volumes:
-      - ../data:/app/data:ro
+      API_URL: http://api:8000
+      RABBIT_HEALTH_URL: http://rabbitmq:15672
+      SCAN_TARGET: rabbitmq
+      SCAN_PORT: 15672
+    depends_on:
+      api:
+        condition: service_healthy
+      worker:
+        condition: service_started
+      rabbitmq:
+          condition: service_healthy
+    command: pytest -v tests/test_scan_rabbitmq.py

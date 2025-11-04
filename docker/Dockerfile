@@ -1,15 +1,37 @@
-# /docker/Dockerfile
+# docker/Dockerfile
 FROM python:3.11-slim
 
-WORKDIR /app
-ENV PYTHONUNBUFFERED=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    FAVICONS_PATH=/app/data/favicons.xml
+    APP_HOME=/app \
+    DATA_DIR=/data \
+    FAVICONS_PATH=/data/favicons.xml \
+    FAVICONS_URL=https://raw.githubusercontent.com/rapid7/recog/master/xml/favicons.xml
 
-COPY requirements.txt /app/
-RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl ca-certificates bash \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+WORKDIR ${APP_HOME}
+
+# Deps first (better layer cache)
+COPY requirements.txt requirements.txt
+RUN python -m pip install --upgrade pip \
+ && pip install -r requirements.txt
+
+# App code
+COPY app app
+COPY tests tests
+COPY pyproject.toml pyproject.toml
+RUN pip install -e .
+
+# Data + entrypoint
+RUN mkdir -p ${DATA_DIR}
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8000
+ENTRYPOINT ["/entrypoint.sh"]
+# Default command (api). The worker service overrides this in compose.
 CMD ["uvicorn", "app.adapters.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
-# End of /docker/Dockerfile

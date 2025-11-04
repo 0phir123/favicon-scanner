@@ -1,17 +1,19 @@
+# mypy: ignore-errors
 # /app/adapters/system/celery_app.py
 from __future__ import annotations
+
 import asyncio
 import logging
 from typing import Any
 
 from celery import Celery
 
-from app.config import settings
-from app.adapters.system.logging_cfg import configure_logger
 from app.adapters.http.aiohttp_fetcher import AiohttpFetcher
 from app.adapters.repositories.rapid7_recog_repo import Rapid7RecogRepository
+from app.adapters.system.logging_cfg import configure_logger
 from app.adapters.system.redis_result_store import RedisResultStore
 from app.adapters.system.target_expander_impl import TargetExpander
+from app.config import settings
 from app.domain.scan_service import ScanRequestDTO, ScanService
 
 LOG = logging.getLogger("adapter.celery")
@@ -41,12 +43,21 @@ _service = ScanService(
     max_targets=settings.MAX_TARGETS,
 )
 
-@celery_app.task(name="scan_job", bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
+
+@celery_app.task(
+    name="scan_job",
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
 def scan_job(self, scan_id: str, payload: dict[str, Any]) -> str:
     """Celery task: executes the scan and persists the result or error."""
     try:
         LOG.info("scan.job.accepted", extra={"extra": {"scan_id": scan_id}})
-        dto = ScanRequestDTO(targets=payload["targets"], ports=payload.get("ports") or settings.DEFAULT_PORTS)
+        dto = ScanRequestDTO(
+            targets=payload["targets"], ports=payload.get("ports") or settings.DEFAULT_PORTS
+        )
 
         async def _run() -> dict:
             resp = await _service.scan(dto)

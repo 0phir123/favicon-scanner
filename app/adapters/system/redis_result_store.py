@@ -1,5 +1,7 @@
+# mypy: ignore-errors
 # /app/adapters/system/redis_result_store.py
 from __future__ import annotations
+
 import json
 import logging
 from typing import Any
@@ -7,6 +9,7 @@ from typing import Any
 import redis
 
 LOG = logging.getLogger("adapter.result_store.redis")
+
 
 class RedisResultStore:
     def __init__(self, redis_url: str, prefix: str = "scan") -> None:

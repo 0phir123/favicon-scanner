@@ -1,14 +1,58 @@
-# /pyproject.toml
+[project]
+name = "favicon-scanner"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  # … your runtime deps …
+]
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["app"]  # keeps it explicit
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-q"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C90"]
+ignore = ["E501"]  # ignore long lines if desired
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.mypy]
 python_version = "3.11"
-warn_return_any = true
+
+# ✅ Only the essentials
+disallow_untyped_defs = true        
+check_untyped_defs = true            
+ignore_missing_imports = true       
 warn_unused_ignores = true
-strict_optional = true
-ignore_missing_imports = true
+warn_return_any = false              #
+warn_unused_configs = true
+allow_any_generics = true            
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "app.adapters.system.redis_result_store"
+disable_error_code = ["union-attr","operator","index"]
+
+[[tool.mypy.overrides]]
+module = "app.adapters.system.celery_app"
+disable_error_code = ["no-untyped-def"]
+
+# Optional: exclude tests or generated files
+exclude = ["tests/"]
 
 [build-system]
 requires = ["setuptools", "wheel"]

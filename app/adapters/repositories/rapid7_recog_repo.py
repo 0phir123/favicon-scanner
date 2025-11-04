@@ -1,9 +1,10 @@
 # /app/adapters/repositories/rapid7_recog_repo.py
 from __future__ import annotations
+
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import xmltodict
 
@@ -11,14 +12,16 @@ LOG = logging.getLogger("adapter.repo.recog")
 
 _HEX32 = re.compile(r"[0-9a-fA-F]{32}")
 
+
 class Rapid7RecogRepository:
     """
     Parses Rapid7 recog http_favicon.xml.
     Builds a map: md5 (lowercase hex) -> list[ {name, properties} ].
     """
+
     def __init__(self, path: str) -> None:
         self._path = Path(path)
-        self._by_md5: Dict[str, List[Dict[str, Any]]] = {}
+        self._by_md5: dict[str, list[dict[str, Any]]] = {}
         self._load()
 
     def _load(self) -> None:
@@ -44,7 +47,7 @@ class Rapid7RecogRepository:
             if isinstance(params, dict):
                 params = [params]
 
-            props: Dict[str, str] = {}
+            props: dict[str, str] = {}
             for p in params:
                 k = p.get("@name")
                 v = p.get("@value")

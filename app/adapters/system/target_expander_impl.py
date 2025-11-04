@@ -1,9 +1,11 @@
 # /app/adapters/system/target_expander_impl.py
 from __future__ import annotations
+
 import logging
 from ipaddress import ip_address, ip_network
 
 LOG = logging.getLogger("adapter.target_expander")
+
 
 class TargetExpander:
     def expand(self, inputs: list[str], max_targets: int) -> list[str]:
