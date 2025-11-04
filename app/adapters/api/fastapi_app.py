@@ -55,3 +55,18 @@ async def scan_result(scan_id: str, x_api_key: str | None = Header(default=None)
     if entry is None:
         raise HTTPException(status_code=404, detail="scan_id not found")
     return entry
+
+
+
+
+
+# /app/adapters/api/fastapi_app.py (add at bottom)
+from app.adapters.repositories.rapid7_recog_repo import Rapid7RecogRepository
+
+_repo_for_debug = Rapid7RecogRepository(settings.FAVICONS_PATH)
+
+@app.get("/match/{md5}")
+def debug_match(md5: str, x_api_key: str | None = Header(default=None)) -> dict:
+    if settings.API_KEY and x_api_key != settings.API_KEY:
+        raise HTTPException(status_code=401, detail="invalid api key")
+    return {"md5": md5.lower(), "matches": _repo_for_debug.lookup_md5(md5)}
