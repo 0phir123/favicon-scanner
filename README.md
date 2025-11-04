@@ -1,4 +1,4 @@
-# 🕵️‍♂️ Favicon Scanner
+#  Favicon Scanner
 
 A lightweight **FastAPI + Celery** service that fingerprints web applications
 by fetching `/favicon.ico`, hashing it, and matching it against the
@@ -10,7 +10,7 @@ and easy extension (e.g., switch storage, queue, or fetcher adapters).
 
 ---
 
-## ⚙️ Architecture
+##  Architecture
 
 ```
 .
@@ -39,13 +39,13 @@ and easy extension (e.g., switch storage, queue, or fetcher adapters).
 
 ---
 
-## 🚀 Quick Start (Local with Docker)
+##  Quick Start (Local with Docker)
 
-### 1️⃣ Prerequisites
+### Prerequisites
 - Docker + Docker Compose v2
 - Python ≥ 3.11 (optional if you only run in Docker)
 
-### 2️⃣ Build & Start All Services
+### Build & Start All Services
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
 ```
@@ -66,7 +66,7 @@ All services should show **Up (healthy)**.
 
 ---
 
-## 🧩 API Endpoints
+## API Endpoints
 
 | Method | Path | Description |
 |---------|------|--------------|
@@ -75,7 +75,7 @@ All services should show **Up (healthy)**.
 | `GET` | `/docs` | Swagger UI |
 
 
-## ⚙️ Configuration (`app/config.py`)
+##  Configuration (`app/config.py`)
 
 Runtime configuration is managed via `app/config.py`, using a Pydantic `Settings` model.  
 This allows **strict typing**, **dotenv or environment overrides**, and **safe defaults** when deploying locally or in CI.
@@ -120,7 +120,7 @@ Expected `"RabbitMQ"` match in results.
 
 ---
 
-## 🧪 Running Tests
+##  Running Tests
 
 ### Run everything inside Docker (recommended)
 ```bash
@@ -140,7 +140,7 @@ pytest -v
 
 ---
 
-## 📜 Logs & Debugging
+##  Logs & Debugging
 
 ### View service logs
 ```bash
@@ -160,7 +160,7 @@ docker compose -f docker/docker-compose.yml logs -f api | jq -r '"\(.level) \(.m
 
 ---
 
-## 🧰 Development Notes
+## Development Notes
 
 ### Background Tasks
 - The API enqueues scan jobs via Celery to Redis.
@@ -182,7 +182,7 @@ as a known favicon source to verify Recog detection.
 
 ---
 
-## 🧩 Development Workflow
+##  Development Workflow
 
 ### Rebuild / refresh code
 ```bash
@@ -201,7 +201,7 @@ docker exec -it docker-worker-1 sh
 
 ---
 
-## 🧱 Tech Stack
+##  Tech Stack
 
 | Area | Tool |
 |------|------|
@@ -216,7 +216,7 @@ docker exec -it docker-worker-1 sh
 
 ---
 
-## ✅ Example Workflow (end-to-end)
+##  Example Workflow (end-to-end)
 
 ```bash
 # 1. Start all services
@@ -231,4 +231,5 @@ curl http://127.0.0.1:8000/scan/<SCAN_ID>
 # 4. Run integration test
 docker compose -f docker/docker-compose.yml run --rm tests pytest -v tests/test_scan_rabbitmq.py
 ```
+
 
