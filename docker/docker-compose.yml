@@ -1,0 +1,53 @@
+# /docker/docker-compose.yml
+version: "3.8"
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports: ["6379:6379"]
+
+  scanner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: favicon-scanner:latest
+    container_name: favicon-scanner
+    environment:
+      API_KEY: ${API_KEY:-}
+      VERIFY_TLS: "false"
+      CONCURRENCY: "200"
+      TIMEOUT_SECONDS: "3.0"
+      PER_HOST_LIMIT: "5"
+      MAX_TARGETS: "2048"
+      MAX_SOCKETS_PER_JOB: "10000"
+      MAX_BYTES: "2097152"
+      RETRIES: "1"
+      RETRY_BACKOFF_MS: "250"
+      FAVICONS_PATH: "/app/data/favicons.xml"
+      REDIS_URL: "redis://redis:6379/0"
+    depends_on: [redis]
+    volumes:
+      - ../data:/app/data:ro
+    ports: ["8000:8000"]
+
+  worker:
+    image: favicon-scanner:latest
+    container_name: favicon-worker
+    command: >-
+      sh -c "celery -A app.adapters.system.celery_app.celery_app worker --loglevel=INFO -Q celery -c ${CELERY_WORKER_CONCURRENCY:-4}"
+    environment:
+      VERIFY_TLS: "false"
+      CONCURRENCY: "200"
+      TIMEOUT_SECONDS: "3.0"
+      PER_HOST_LIMIT: "5"
+      MAX_TARGETS: "2048"
+      MAX_SOCKETS_PER_JOB: "10000"
+      MAX_BYTES: "2097152"
+      RETRIES: "1"
+      RETRY_BACKOFF_MS: "250"
+      FAVICONS_PATH: "/app/data/favicons.xml"
+      REDIS_URL: "redis://redis:6379/0"
+      CELERY_WORKER_CONCURRENCY: "${CELERY_WORKER_CONCURRENCY:-4}"
+    depends_on: [redis]
+    volumes:
+      - ../data:/app/data:ro
