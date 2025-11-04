@@ -164,7 +164,7 @@ docker compose -f docker/docker-compose.yml logs -f api | jq -r '"\(.level) \(.m
 
 ### Background Tasks
 - The API enqueues scan jobs via Celery to Redis.
-- Each worker performs async HTTP fetches (100+ concurrent) per job.
+- Each worker performs async HTTP fetches per job.
 - Results are stored back into Redis via the `ResultStorePort`.
 
 ### Dummy RabbitMQ Target
@@ -231,5 +231,6 @@ curl http://127.0.0.1:8000/scan/<SCAN_ID>
 # 4. Run integration test
 docker compose -f docker/docker-compose.yml run --rm tests pytest -v tests/test_scan_rabbitmq.py
 ```
+
 
 
