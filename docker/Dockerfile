@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR ${APP_HOME}
 
-# Deps first (better layer cache)
 COPY requirements.txt requirements.txt
 RUN python -m pip install --upgrade pip \
  && pip install -r requirements.txt
@@ -35,3 +34,4 @@ EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 # Default command (api). The worker service overrides this in compose.
 CMD ["uvicorn", "app.adapters.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
+
