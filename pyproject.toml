@@ -6,7 +6,7 @@ dependencies = [
   "fastapi",
   "uvicorn",
   "pydantic",
-  # … your runtime deps …
+
 ]
 
 [tool.setuptools]
@@ -33,7 +33,7 @@ indent-style = "space"
 [tool.mypy]
 python_version = "3.11"
 
-# ✅ Only the essentials
+
 disallow_untyped_defs = true        
 check_untyped_defs = true            
 ignore_missing_imports = true       
@@ -57,3 +57,4 @@ exclude = ["tests/"]
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
