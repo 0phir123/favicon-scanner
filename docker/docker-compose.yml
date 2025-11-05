@@ -10,16 +10,13 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management
-    # OPTIONAL: publish to host so you can open it in a browser. Pick non-conflicting ports.
-    # Comment these two lines if you don't need host access.
     ports:
-      - "5673:5672"     # AMQP on host 5673 -> container 5672
-      - "15673:15672"   # UI  on host 15673 -> container 15672
+      - "5673:5672"     
+      - "15673:15672"   
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
-      # Use rabbitmq-diagnostics ping (more reliable than curl early in boot)
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
       timeout: 5s
@@ -83,3 +80,4 @@ services:
       rabbitmq:
           condition: service_healthy
     command: pytest -v tests/test_scan_rabbitmq.py
+
