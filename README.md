@@ -33,7 +33,7 @@ and easy extension (e.g., switch storage, queue, or fetcher adapters).
 | Layer | Responsibility |
 |-------|----------------|
 | **Domain** | Pure business logic (`ScanService`) orchestrates scanning |
-| **Ports** | Abstract boundaries for repositories and external systems |
+| **Ports** | "Interface" Abstract boundaries for repositories and external systems |
 | **Adapters** | Concrete implementations (HTTP fetcher, Redis store, Celery worker, API) |
 | **Infrastructure** | Docker, Redis, RabbitMQ(Only for testing scan), Celery integration |
 
@@ -232,6 +232,7 @@ curl http://127.0.0.1:8000/scan/<SCAN_ID>
 # 4. Run integration test
 docker compose -f docker/docker-compose.yml run --rm tests pytest -v tests/test_scan_rabbitmq.py
 ```
+
 
 
 
